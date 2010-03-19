@@ -59,6 +59,11 @@
       <version>${lucene-version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-misc</artifactId>
+      <version>${lucene-version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
       <version>${tika-version}</version>

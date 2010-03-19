@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import net.sf.json.JSONObject;
 
+import org.apache.lucene.index.BalancedSegmentMergePolicy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -223,6 +224,7 @@ public final class Lucene {
         final IndexWriter result = new IndexWriter(dir, Constants.ANALYZER, MaxFieldLength.UNLIMITED);
         result.setMergeFactor(5);
         result.setUseCompoundFile(false);
+        result.setMergePolicy(new BalancedSegmentMergePolicy(result));
         return result;
     }
 
