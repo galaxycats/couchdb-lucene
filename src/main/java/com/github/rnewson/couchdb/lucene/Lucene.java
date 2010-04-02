@@ -32,6 +32,7 @@ import org.apache.lucene.index.BalancedSegmentMergePolicy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -49,12 +50,9 @@ public final class Lucene {
     private static class Tuple {
         private String version;
         private boolean dirty;
-        private final IndexWriter writer;
+        private IndexWriter writer;
         private IndexReader reader;
-
-        public Tuple(final IndexWriter writer) {
-            this.writer = writer;
-        }
+        private QueryParser parser;
 
         public void close() throws IOException {
             if (reader != null)
@@ -72,7 +70,7 @@ public final class Lucene {
     }
 
     public interface SearcherCallback {
-        public void callback(final IndexSearcher searcher, final String version) throws IOException;
+        public void callback(final IndexSearcher searcher, final QueryParser parser, final String version) throws IOException;
 
         public void onMissing() throws IOException;
     }
@@ -97,10 +95,8 @@ public final class Lucene {
     }
 
     public void withReader(final IndexPath path, final boolean staleOk, final ReaderCallback callback) throws IOException {
-        final Tuple tuple;
-        synchronized (map) {
-            tuple = map.get(path);
-        }
+        final Tuple tuple = getTuple(path);
+
         if (tuple == null) {
             callback.onMissing();
             return;
@@ -139,7 +135,8 @@ public final class Lucene {
         withReader(path, staleOk, new ReaderCallback() {
 
             public void callback(final IndexReader reader) throws IOException {
-                callback.callback(new IndexSearcher(reader), map.get(path).version);
+            	final Tuple tuple = getTuple(path);
+                callback.callback(new IndexSearcher(reader), tuple.parser, tuple.version);
             }
 
             public void onMissing() throws IOException {
@@ -149,10 +146,7 @@ public final class Lucene {
     }
 
     public void withWriter(final IndexPath path, final WriterCallback callback) throws IOException {
-        final Tuple tuple;
-        synchronized (map) {
-            tuple = map.get(path);
-        }
+        final Tuple tuple = getTuple(path);
 
         if (tuple == null) {
             callback.onMissing();
@@ -165,25 +159,28 @@ public final class Lucene {
                 tuple.dirty = dirty;
             }
         } catch (final OutOfMemoryError e) {
-            map.remove(path).writer.rollback();
+            removeTuple(path).writer.rollback();
             throw e;
         }
     }
 
-    public void createWriter(final IndexPath path, final UUID uuid, final View view) throws IOException {
-        final File dir = new File(getUuidDir(uuid), view.getDigest());
-        dir.mkdirs();
+	public void createWriter(final IndexPath path, final UUID uuid,
+			final View view) throws IOException {
+		final File dir = new File(getUuidDir(uuid), view.getDigest());
+		dir.mkdirs();
 
-        synchronized (map) {
-            Tuple tuple = map.remove(path);
-            if (tuple != null) {
-                tuple.close();
-            }
-            final Directory d = FSDirectory.open(dir);
-            tuple = new Tuple(newWriter(d));
-            map.put(path, tuple);
-        }
-    }
+		Tuple tuple = removeTuple(path);
+		if (tuple != null) {
+			tuple.close();
+		}
+		final Directory d = FSDirectory.open(dir);
+		tuple = new Tuple();
+		tuple.writer = newWriter(d);
+		tuple.parser = new CustomQueryParser(Constants.VERSION,
+				Constants.DEFAULT_FIELD, view.getAnalyzer());
+
+		putTuple(path, tuple);
+	}
 
     public File getRootDir() {
         return root;
@@ -231,5 +228,23 @@ public final class Lucene {
     private String newVersion() {
         return Long.toHexString(System.nanoTime());
     }
+
+	private Tuple getTuple(final IndexPath path) {
+		synchronized (map) {
+			return map.get(path);
+		}
+	}
+	
+	private Tuple removeTuple(final IndexPath path) {
+		synchronized(map) {
+			return map.remove(path);
+		}
+	}
+	
+	private Tuple putTuple(final IndexPath path, final Tuple tuple) {
+		synchronized(map) {
+			return map.put(path, tuple);
+		}
+	}
 
 }
