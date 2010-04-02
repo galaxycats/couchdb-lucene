@@ -122,7 +122,7 @@ The following indexing options can be defaulted;
   <tr>
     <th>type</th>
     <td>the type of the field</td>
-    <td>date, double, float, integer, long, string</td>
+    <td>date, double, float, int, long, string</td>
     <td>string</td>
   </tr>
   <tr>
@@ -188,7 +188,7 @@ Data may be added to this document with the add method which takes an optional s
 doc.add("value");
 
 // Add a numeric field.
-doc.add(35, {"type":"integer"});
+doc.add(35, {"type":"int"});
 
 // Add a date field.
 doc.add(new Date("2009-01-01"), {"type":"date"});
@@ -204,7 +204,10 @@ doc.add("value", {"store":"yes"});
 // Add but don't analyze.
 doc.add("don't analyze me", {"index":"not_analyzed"});
 
-// Extract text from the named attachment and index it (but not store it).
+// Extract text from the named attachment and index it.
+doc.attachment("attachment name");
+
+// Extract text from the named attachment and index it to a separate field
 doc.attachment("attachment name", {"field":"attachments"});
 </pre>
 
@@ -330,7 +333,7 @@ In addition to normal text-based range searches (using the "field:[lower TO uppe
 
 <table>
 <tr><td>type</td><td>example</td></tr>
-<tr><td>integer</td><td>field&lt;int>:[0 TO 100]</td></tr>
+<tr><td>int</td><td>field&lt;int>:[0 TO 100]</td></tr>
 <tr><td>long</td><td>field&lt;long>:[0 TO 100]</td></tr>
 <tr><td>float</td><td>field&lt;float>:[0.0 TO 100.0]</td></tr>
 <tr><td>double</td><td>field&lt;double>:[0.0 TO 100.0]</td></tr>
