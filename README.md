@@ -11,6 +11,10 @@
 <tr><td>0.10+</td><td>0.5 (not yet released)</td></tr>
 </table>
 
+<h1>Breaking Changes</h1>
+
+The URL's have changed to include the full design documents name (e.g, "_design/myddoc"). This is done for parity with couchdb and should make url rewriting rules easier.
+
 <h1>Issue Tracking</h1>
 
 Issue tracking at <a href="http://github.com/rnewson/couchdb-lucene/issues">github</a>.
