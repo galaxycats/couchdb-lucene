@@ -59,6 +59,12 @@ def respond(res, req, key):
     # Drop name of external hook.
     del path[1]
 
+    # Drop _design path.
+    if path[1] == "_design":
+        del path[1]
+    else:
+        return mkresp(400, "{code:\"400\",reason:\"bad_path\"}")
+
     # URL-escape each part
     for index, item in enumerate(path):
         path[index] = urllib.quote(path[index], "")
